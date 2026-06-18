@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Assinatura Digital</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; background: #f4f4f9; margin: 0; padding: 20px; }
+        h2 { color: #333; }
+        .canvas-container { border: 2px solid #ccc; background: #fff; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+        canvas { display: block; touch-action: none; /* Evita que a tela role enquanto desenha */ }
+        .buttons { display: flex; gap: 10px; }
+        button { padding: 10px 20px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
+        .btn-clear { background: #ff4d4d; color: white; }
+        .btn-send { background: #4caf50; color: white; }
+    </style>
+</head>
+<body>
+
+    <h2>Assine Aqui</h2>
+    <div class="canvas-container">
+        <canvas id="assinaturaCanvas" width="300" height="200"></canvas>
+    </div>
+    
+    <div class="buttons">
+        <button class="btn-clear" onclick="limpar()">Limpar</button>
+        <button class="btn-send" onclick="enviarAssinatura()">Enviar Assinatura</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('assinaturaCanvas');
+        const ctx = canvas.getContext('2d');
+        let desenhando = false;
+
+        // Configurações do traço
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#000';
+
+        // Captura posição exata considerando o canvas
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            // Suporte para touch e mouse
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        // Eventos de Mouse e Touch
+        const iniciarDesenho = (e) => { desenhando = true; const pos = getPos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); };
+        const desenhar = (e) => { if (!desenhando) return; e.preventDefault(); const pos = getPos(e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); };
+        const pararDesenho = () => { desenhando = false; ctx.closePath(); };
+
+        canvas.addEventListener('mousedown', iniciarDesenho);
+        canvas.addEventListener('mousemove', desenhar);
+        canvas.addEventListener('mouseup', pararDesenho);
+        canvas.addEventListener('mouseout', pararDesenho);
+
+        canvas.addEventListener('touchstart', iniciarDesenho, {passive: false});
+        canvas.addEventListener('touchmove', desenhar, {passive: false});
+        canvas.addEventListener('touchend', pararDesenho);
+
+        // Limpar o Canvas
+        function limpar() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Enviar para a API
+        async function enviarAssinatura() {
+            // Converte o canvas para uma string Base64 (imagem em texto)
+            const imagemBase64 = canvas.toDataURL('image/png');
+            
+            console.log("Enviando assinatura...");
+
+            try {
+                // Substitua a URL abaixo pela URL real da sua API
+                const resposta = await fetch('https://toolsdev-api.equipetools.com.br/api/v1/vendas/gerarvenda', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+						'Token': 'a1f5d4ebb7a38b7012e724fb85b78006bdf1113d108e81de37ef972c6dde989e'
+                    },
+                    body: JSON.stringify({
+                        usuario_id: "12345",
+                        assinatura: imagemBase64 // Aqui vai a imagem
+                    })
+                });
+
+                if (resposta.ok) {
+                    alert("Assinatura enviada com sucesso!");
+                    limpar();
+                } else {
+                    alert("Erro ao enviar a assinatura. Status: " + resposta.status);
+                }
+            } catch (erro) {
+                console.error("Erro na chamada da API:", erro);
+                alert("Erro de rede ao tentar enviar. (Veja o console)");
+            }
+        }
+    </script>
+</body>
+</html>
