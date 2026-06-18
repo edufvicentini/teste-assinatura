@@ -85,13 +85,6 @@
                         assinatura: imagemBase64 // Aqui vai a imagem
                     })
                 });
-
-                if (resposta.ok) {
-                    alert("Assinatura enviada com sucesso!");
-                    limpar();
-                } else {
-                    alert("Erro ao enviar a assinatura. Status: " + resposta.status);
-                }
             } catch (erro) {
                 console.error("Erro na chamada da API:", erro);
                 alert("Erro de rede ao tentar enviar. (Veja o console)");
